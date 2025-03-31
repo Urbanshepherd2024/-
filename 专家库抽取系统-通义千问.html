@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专家库抽取系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            color: darkgray;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        hr {
+            width: 80%;
+            border: none;
+            height: 1px;
+            background-color: lightgray;
+            margin-bottom: 20px;
+        }
+        .operation-container {
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .display-area {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .button-container {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input[type="file"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .record-list {
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .record-item {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>专家库抽取系统</h1>
+</div>
+<hr>
+<div class="operation-container">
+    <div class="display-area" id="expertDisplay">
+        <p>点击“抽取”按钮开始抽取专家。</p>
+    </div>
+    <div class="button-container">
+        <button id="drawButton">抽取</button>
+    </div>
+    <div class="upload-container">
+        <input type="file" id="expertFileUpload" accept=".xlsx, .xls">
+    </div>
+    <div class="record-list" id="recordList">
+        <h2>抽取记录</h2>
+        <ul id="recordItems"></ul>
+    </div>
+</div>
+
+<!-- 引入 XLSX 库 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let experts = [];
+
+        // 获取DOM元素
+        const drawButton = document.getElementById('drawButton');
+        const expertFileUpload = document.getElementById('expertFileUpload');
+        const expertDisplay = document.getElementById('expertDisplay');
+        const recordItems = document.getElementById('recordItems');
+
+        // 绑定事件监听器
+        drawButton.addEventListener('click', drawExpert);
+        expertFileUpload.addEventListener('change', handleFileUpload);
+
+        function drawExpert() {
+            if (experts.length === 0) {
+                expertDisplay.innerText = "请先上传专家资料库文件。";
+                return;
+            }
+            const randomIndex = Math.floor(Math.random() * experts.length);
+            const selectedExpert = experts[randomIndex];
+            expertDisplay.innerText = `抽取的专家是：${selectedExpert}`;
+
+            // 添加抽取记录
+            const now = new Date();
+            const formattedTime = now.toLocaleString();
+            const recordItem = document.createElement('li');
+            recordItem.className = 'record-item';
+            recordItem.innerText = `${formattedTime} - 抽取的专家是：${selectedExpert}`;
+            recordItems.appendChild(recordItem);
+
+            // 限制记录数量为20条
+            while (recordItems.children.length > 20) {
+                recordItems.removeChild(recordItems.firstChild);
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                // Assuming the expert names are in the second column (index 1)
+                experts = jsonData.map(row => row[1]).filter(name => name); // Filter out any empty names
+
+                expertDisplay.innerText = "专家资料库已成功上传。";
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    });
+</script>
+
+</body>
+</html>
+
+
+
